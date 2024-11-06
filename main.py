@@ -112,6 +112,46 @@ def exp_func(x, a, b):
 def tangent_line(x, a, b):
     return a * x + b
 
+
+#%%
+def evaluattion_of_function(type='slope', slope=1, points=((0, 0))):
+    """
+    计算指定点的切线斜率或截距
+
+    参数:
+    type : str - 计算类型，'slope'表示计算斜率，'point'表示计算指定点的斜率，默认为'slope'
+    slope : float - 斜率值，默认为1
+    points : tuple - 指定点的坐标，默认为(0, 0)
+
+    返回:
+    function - 计算结果的函数；发生错误时返回None
+    """
+    try:
+        if type not in ['slope', 'point']:
+            raise ValueError("不支持的计算类型。")
+
+        point = iter(points)
+        x1, y1 = next(point)
+
+        if type == 'slope':
+            intercept = y1 - slope * x1
+            return lambda x: slope * x + intercept
+        elif type == 'point':
+            x2, y2 = next(point)
+            if x2 == x1:
+                raise ValueError("两点x坐标相同，无法计算斜率。")
+            slope = (y2 - y1) / (x2 - x1)
+            intercept = y1 - slope * x1
+            return lambda x: slope * x + intercept
+
+    except ValueError as ve:
+        print(f"发生错误: {ve}")
+        return None  # 返回None表示执行失败
+    except Exception as e:
+        print(f"发生未知错误: {e}")
+        return None  # 返回None表示执行失败
+
+
 #%%
 if __name__ == '__main__':
     data_dir = './data/origin/merged.csv'
@@ -132,8 +172,12 @@ if __name__ == '__main__':
     print(f"拟合参数：a = {a}, b = {b}")
 
     # 使用拟合参数生成拟合曲线
-    x_fit = np.linspace(min(x), max(x), 10000)
+    x_fit = np.linspace(min(x), max(x), 100000)
     y_fit = exp_func(x_fit, a, b)
+
+    gradient = np.gradient(y_fit, x_fit)
+    print(f"斜率最接近1的点： {min(abs(gradient - 1))}")
+    print(f"梯度：{gradient}")
 
     # 绘制切线
     y_tangent = tangent_line(x_fit, 1, 0.578)
@@ -141,7 +185,8 @@ if __name__ == '__main__':
 
 
     print(f"拟合曲线：{y_fit}")
-
+    plt.xlim(0, 1)
+    plt.ylim(0, 1.2)
     # 绘制原始数据点
     plt.scatter(x, y, label='原始数据')
 
@@ -154,32 +199,8 @@ if __name__ == '__main__':
     # 显示图表
     plt.show()
 
+# %%
 
-    # %%
-
-
-    # 定义函数
-    def f(x):
-        return -0.8806799818246278 * np.exp(-6.480351687210877 * x) + 1
-
-
-    # 定义 x 的范围
-    x_values = np.linspace(-2, 2, 400)
-    y_values = f(x_values)
-
-    # 绘制图形
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_values, y_values, label='f(x) = -0.8806799818246278 * (-6.480351687210877)^x + 1', color='b')
-    plt.axhline(0, color='black', lw=0.5, ls='--')
-    plt.axvline(0, color='black', lw=0.5, ls='--')
-    plt.title('Plot of the Exponential Function')
-    plt.xlabel('x')
-    plt.ylabel('f(x)')
-    plt.ylim(0, 1)
-    plt.xlim(0, 1)
-    plt.legend()
-    plt.grid()
-    plt.show()
 
 
     # 读取数据并处理药物名称的交集和并集
