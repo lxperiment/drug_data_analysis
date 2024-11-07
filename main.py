@@ -154,50 +154,61 @@ def evaluattion_of_function(type='slope', slope=1, points=((0, 0))):
 
 #%%
 if __name__ == '__main__':
-    data_dir = './data/origin/merged.csv'
-    df = pd.read_csv(data_dir)
+    try:
+        data_dir = './data/origin/merged.csv'
+        df = pd.read_csv(data_dir)
 
-    df = df.groupby('DRUG_NAME')['RQ'].count().sort_values(ascending=False).reset_index()
-    df.set_index('DRUG_NAME', inplace=True)
-    df1 = TagetCount(df, 1, type='d')
-    x = np.linspace(0, 1, len(df1))
-    y = df1['Byte']
+        df = df.groupby('DRUG_NAME')['RQ'].count().sort_values(ascending=False).reset_index()
+        df.set_index('DRUG_NAME', inplace=True)
+        df1 = TagetCount(df, 1, type='d')
 
-    # 使用curve_fit进行拟合
-    params, covariance = curve_fit(exp_func, x, y)
-    # 提取拟合参数
-    a, b = params
+        if df1.empty:
+            print("没有满足条件的数据，停止执行。")
+        else:
+            x = np.linspace(0, 1, len(df1))
+            y = df1['Byte']
 
-    # 打印拟合参数
-    print(f"拟合参数：a = {a}, b = {b}")
+            # 使用curve_fit进行拟合
+            params, _ = curve_fit(exp_func, x, y)
+            a, b = params
 
-    # 使用拟合参数生成拟合曲线
-    x_fit = np.linspace(min(x), max(x), 100000)
-    y_fit = exp_func(x_fit, a, b)
+            # 打印拟合参数
+            print(f"拟合参数：a = {a}, b = {b}")
 
-    gradient = np.gradient(y_fit, x_fit)
-    print(f"斜率最接近1的点： {min(abs(gradient - 1))}")
-    print(f"梯度：{gradient}")
+            # 使用拟合参数生成拟合曲线
+            x_fit = np.linspace(0, 1, 100000)  # 使用相同范围的x_fit
+            y_fit = exp_func(x_fit, a, b)
 
-    # 绘制切线
-    y_tangent = tangent_line(x_fit, 1, 0.578)
-    plt.plot(x_fit, y_tangent, 'g--', label='切线')
+            # 计算梯度并找到斜率最接近1的点
+            gradient = np.gradient(y_fit, x_fit)
+            index = np.argmin(np.abs(gradient - 1))
+            print(f"斜率最接近1的点： {gradient[index]}")
+            print(f"斜率最接近1的点的横坐标：{x_fit[index]}")
+            print(f"斜率最接近1的点的纵坐标：{y_fit[index]}")
 
+            # 绘制切线
+            y_tangent = tangent_line(x_fit, 1, y_fit[index] - x_fit[index])  # 修正切线的截距计算
+            plt.plot(x_fit, y_tangent, 'g--', label='切线')
 
-    print(f"拟合曲线：{y_fit}")
-    plt.xlim(0, 1)
-    plt.ylim(0, 1.2)
-    # 绘制原始数据点
-    plt.scatter(x, y, label='原始数据')
+            print(f"拟合曲线：{y_fit}")
+            plt.xlim(0, 1)
+            plt.ylim(0, 1.2)
+            plt.scatter(x, y, label='原始数据')
+            plt.plot(x_fit, y_fit, 'r-', label='拟合曲线')
+            plt.scatter(x_fit[index], y_fit[index], label='斜率为1的切点')
+            plt.text(x_fit[index], y_fit[index], f"({x_fit[index]:.4f}, {y_fit[index]:.4f})", fontsize=10, ha='right')
 
-    # 绘制拟合曲线
-    plt.plot(x_fit, y_fit, 'r-', label='拟合曲线')
+            plt.title('药物使用比例曲线')
+            plt.xlabel('药物使用比例')
+            plt.ylabel('累计使用量')
+            plt.legend()
+            plt.show()
 
-    # 添加图例
-    plt.legend()
+    except FileNotFoundError:
+        print("发生错误: 文件未找到，请检查路径。")
+    except Exception as e:
+        print(f"发生未知错误: {e}")
 
-    # 显示图表
-    plt.show()
 
 # %%
 
