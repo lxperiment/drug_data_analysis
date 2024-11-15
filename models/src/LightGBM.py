@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # 数据导入与预处理
-data_dir = "./data/bike.csv"
+data_dir = "../../data/bike.csv"
 data = pd.read_csv(data_dir)
 
 # 确保列名没有多余的空格

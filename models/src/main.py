@@ -10,7 +10,7 @@ matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方
 
 #%%
 # 计算指定列中累计达到目标值的条目
-def TagetCount(data, taget=1.0, column=0, type='s'):
+def taget_count(data, taget=1.0, column=0, type='s'):
     """
     计算在指定列中累计达到目标值的条目
 
@@ -155,16 +155,17 @@ def evaluattion_of_function(type='slope', slope=1, points=((0, 0))):
 #%%
 if __name__ == '__main__':
     try:
-        data_dir = './data/origin/merged.csv'
+        data_dir = '../../data/origin/merged.csv'
         df = pd.read_csv(data_dir)
 
         df = df.groupby('DRUG_NAME')['RQ'].count().sort_values(ascending=False).reset_index()
         df.set_index('DRUG_NAME', inplace=True)
-        df1 = TagetCount(df, 1, type='d')
+        df1 = taget_count(df, 1, type='d')
 
         if df1.empty:
             print("没有满足条件的数据，停止执行。")
         else:
+            # 计算药物使用比例曲线
             x = np.linspace(0, 1, len(df1))
             y = df1['Byte']
 
@@ -211,40 +212,43 @@ if __name__ == '__main__':
 
 
 # %%
+data_dir = '../../data/origin/merged.csv'
+df = pd.read_csv(data_dir)
+
+df = df.groupby('DRUG_NAME')['RQ'].count().sort_values(ascending=False).reset_index()
+df.set_index('DRUG_NAME', inplace=True)
+df1 = taget_count(df, 1, type='d')
+x = np.linspace(0, 1, len(df1))
+y = df1['Byte']
+# 计算梯度并找到斜率最接近1的点
+gradient = np.gradient(y, x)
+index = np.argmin(np.abs(gradient - 1))
+print(f"斜率最接近1的点： {gradient[index]}")
+print(f"斜率最接近1的点的横坐标：{x[index]}")
+print(f"斜率最接近1的点的纵坐标：{y[index]}")
+print(f"斜率最接近1的点的index：{index}")
+print(df1.loc[:index, :])
+# 绘制曲线
+plt.xlim(0, 1)
+plt.ylim(0, 1.2)
+plt.plot(x, y, label='原始数据')
+plt.scatter(x[index], y[index], label='斜率为1的切点')
+plt.text(x[index], y[index], f"({x[index]:.4f}, {y[index]:.4f})", fontsize=10, ha='right')
+#绘制切线
+y_tangent = tangent_line(x, 1, y[index] - x[index])  # 修正切线的截距计算
+plt.plot(x, y_tangent, 'g--', label='切线')
+
+plt.title('药物使用比例曲线')
+plt.xlabel('药物使用比例')
+plt.ylabel('累计使用量')
+plt.legend()
+plt.show()
 
 
+# %%
+import DrugProportion as dp
 
-    # 读取数据并处理药物名称的交集和并集
-    # try:
-    #     data_dir = './data/data_crosstab.csv'
-    #     df = pd.read_csv(data_dir)
-    #     intersection = set(df['DRUG_NAME'].unique())
-    #     df.set_index('DRUG_NAME', inplace=True)
-    #     taget = 0.831727
-    #     union = set()
-    #
-    #     # 遍历数据框的每一列以计算目标计数和更新交集与并集
-    #     for i in range(df.shape[1]):  # 使用 shape 属性提高效率
-    #         result = TagetCount(df, taget, i)
-    #         if result is not None:  # 检查 TagetCount 的返回值是否合法
-    #             section = set(result.unique())
-    #             intersection &= section  # 更新交集
-    #             union |= section  # 更新并集
-    #
-    #     # 将并集和交集结果保存为Excel文件
-    #     pd.DataFrame({'DRUG_NAME': list(union)}).to_excel('./results/union.xlsx', index=False)
-    #     pd.DataFrame({'DRUG_NAME': list(intersection)}).to_excel('./results/intersection.xlsx', index=False)
-    #
-    # except FileNotFoundError:
-    #     print("发生错误: 文件未找到，请检查路径。")
-    # except Exception as e:
-    #     print(f"发生错误: {e}")
+data_dir = '../../data/origin/merged.csv'
+df = pd.read_csv(data_dir)
 
-
-
-
-
-
-
-
-
+df = df.crosstab(index='DRUG_NAME', columns='RQ', values='ID', aggfunc='count')
